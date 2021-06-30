@@ -1,24 +1,7 @@
-// Update with your config settings.
+require('dotenv').config()
 
 module.exports = {
 
-  development: {
-    client: 'postgresql',
-    version: '13.0',
-    connection: 'postgres://dbmanager:qwerty@localhost:5432/kurm',
-    pool: {
-      min: 2,
-      max: 10
-    },
-    migrations: {
-      tableName: 'knex_migrations'
-    }
-  },
-
-
-
-
-/*
   development: {
     client: 'postgresql',
     version: '13.0',
@@ -37,7 +20,7 @@ module.exports = {
       tableName: 'knex_migrations'
     }
   },
-
+/*
   production: {
     client: 'postgresql',
     connection: {

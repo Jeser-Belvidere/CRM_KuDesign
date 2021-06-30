@@ -1,23 +1,19 @@
 require('dotenv').config()
 const express = require('express')
+const app = express()
 const swaggerUi = require('swagger-ui-express')
 const userRouter = require('./routes/user.routes')
-
+const projectRouter = require('./routes/project.routes')
 
 const port = process.env.PORT || 6000
 const swaggerDocument = require('./swagger.json')
 
-const app = express()
+app.use(express.json())
+app.use(express.urlencoded({extended: true}));
 
 app.use('/swagger', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-
-
-app.use(express.json())
-app.use(express.urlencoded({
-    extended: true
-  }));
-app.use('/api', userRouter)
-
+app.use('/user', userRouter)
+app.use('/project', projectRouter)
 
 
 async function start() {
