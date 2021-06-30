@@ -1,12 +1,19 @@
 const db = require('../db/db')
 const bcrypt = require('../middlewares/bcrypt')
+const {validationResult} = require('express-validator')
+const JWT = require('../middlewares/jwt')
 //TODO: вывести в middleware обработку ошибок, проверки пользователя/проекта на существование
 class UserController {
     async createUser(req, res) {
-        if(req.body = {}) {return res.status(400).json({message: 'Empty body'})}
-        const {email, password, mobile_phone} = req.body
         try {
+            const errors = validationResult(req)
+            if(!errors.isEmpty()) {
+                return res.status(400).json({message:'Auth error', errors})
+            }
+            const {email, password, mobile_phone} = req.body
+
             const isExist = await db('users').where('email', email).first()//добавить в класс аутентификации
+
             if(!isExist) {
                 const hashedPassword = bcrypt.hashingPassword(password)
                 const newUser = await db('users').insert({
@@ -23,19 +30,18 @@ class UserController {
         }
     }
     async getUser(req, res) {
-        const {email} = req.body
-
-        if(req.body = {}) {return res.status(400).json({message: 'Empty body'})}//Добавить в класс ошибок
-
         try {
+            const {email} = req.body
+            const errors = validationResult(req)
+            if(!errors.isEmpty()) {
+                return res.status(400).json({message:'Get user error', errors})
+            }
+
             const isExist = await db('users').where('email', email).first()
-
-            console.log(email)
-
             if(isExist) {
-                const users = await db('users').select('*').where('email',email)
+                const user = await db('users').select('*').where('email',email)
                 return res.status(200).json({
-                    users,
+                    user,
                     message: 'getted'
                 })
             } else {
@@ -47,10 +53,13 @@ class UserController {
         }
     }
     async updateUser(req, res) {
-        if(req.body = {}) {return res.status(400).json({message: 'Empty body'})}
-        const user = req.body;
-        const {email} = user
         try{
+            const user = req.body;
+            const {email} = user
+            const errors = validationResult(req)
+            if(!errors.isEmpty()) {
+                return res.status(400).json({message:'Update user error', errors})
+            }
             const isExist = await db('users').where('email', email).first()
 
             if(user.password) {user.password = bcrypt.hashingPassword(user.password)}
@@ -65,10 +74,13 @@ class UserController {
             throw new Error(e)
         }
     }
-    async deleteUser(req, res) {
-        if(req.body = {}) {return res.status(400).json({message: 'Empty body'})}
-        const {email} = req.body;
+    async deleteUser(req, res) {        
         try {
+            const errors = validationResult(req)
+            if(!errors.isEmpty()) {
+                return res.status(400).json({message:'Auth error', errors})
+            }
+            const {email} = req.body;
             const deleteUser = await db('users').del().where('email',email)
             
             if(!deleteUser) {
@@ -81,20 +93,24 @@ class UserController {
         } 
     }  
     async loginUser(req, res) {
-        if(req.body = {}) {return res.status(400).json({message: 'Empty body'})}
-        const {email, password} = req.body;
         try{
+            const errors = validationResult(req)
+            if(!errors.isEmpty()) {
+                return res.status(400).json({message:'Auth error', errors})
+            }
+            const {email, password} = req.body
             const isExist = await db('users').where('email', email).first()
-            const {password: hashedPassword} = isExist
+            const {password: hashedPassword, isadmin,user_id} = isExist
 
             if(!isExist) {{return res.status(400).json({message: 'Nothing to get'})}}
 
                 const validation = await bcrypt.compareHash(password, hashedPassword)
 
                     if(validation) {
+                        const token = JWT.generateAccessToken(user_id, isadmin)
                         return res.status(200).json({
-                            message:'bcrypt successed'
-                            //Отдать токен
+                            message:'bcrypt successed',
+                            token
                         })
                     } else {
                         res.status(400).json({message:'password incorrect'})
@@ -106,7 +122,6 @@ class UserController {
     }
     //TODO:Дописать токен в req
     async listOfUsers(req, res) {
-        if(req.body = {}) {return res.status(400).json({message: 'Empty body'})}
         try{
             const list = await db('users').select('*')
             return res.status(200).json({
